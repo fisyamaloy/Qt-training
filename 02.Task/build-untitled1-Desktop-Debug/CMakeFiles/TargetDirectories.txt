@@ -1,0 +1,8 @@
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/untitled1.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/edit_cache.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/rebuild_cache.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/list_install_components.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/install.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/install/local.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/install/strip.dir
+/home/danil/Programming/Qt_training/02.Task/build-untitled1-Desktop-Debug/CMakeFiles/untitled1_autogen.dir
