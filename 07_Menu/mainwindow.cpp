@@ -5,6 +5,8 @@
 #include <QAction>
 #include <QIcon>
 #include "FindDialog.h"
+#include <QToolBar>
+#include <QStatusBar>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -52,6 +54,23 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(findDialog, &QAction::triggered, this, &MainWindow::onFindDialogTriggered);
 
+    QToolBar* toolBar = new QToolBar(this);
+    QAction* newAction = new QAction(tr("ToolBar action test"), this);
+    newAction->setIcon(QIcon(":/Icons/greenCircle.png"));
+    toolBar->addAction(newAction);
+
+    QWidget* widget = new QWidget(this);
+    widget->setFixedSize(100, 100);
+    toolBar->addWidget(widget);
+
+    toolBar->addAction("testText", [this](){
+        auto msgBox = new QMessageBox;
+        msgBox->show();
+        status->setText("testText executed");
+    });
+
+    status = new QLabel("Success");
+    statusBar()->addWidget(status);
 }
 
 void MainWindow::onNewTriggered()

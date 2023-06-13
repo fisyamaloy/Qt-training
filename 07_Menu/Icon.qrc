@@ -3,5 +3,6 @@
         <file>Icons/newFile.jpeg</file>
         <file>Icons/openFile.png</file>
         <file>Icons/saveFile.jpg</file>
+        <file>Icons/greenCircle.png</file>
     </qresource>
 </RCC>
