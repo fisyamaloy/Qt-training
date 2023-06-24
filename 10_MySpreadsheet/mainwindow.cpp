@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -32,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     auto menuBarActions = ui->menubar->actions();
     auto fileSubMenu = menuBarActions.at(0)->menu();
     auto fileActions = fileSubMenu->actions();
-    for (int i = 0; i < RECENT_FILES_AMOUNT; ++i)
+    for (int i = 0; i < MAX_RECENT_FILES_AMOUNT; ++i)
     {
         recentFilesActions[i] = new QAction(this);
         recentFilesActions[i]->setVisible(false);
@@ -63,7 +64,19 @@ MainWindow::~MainWindow()
 
 void MainWindow::onOpenRecentFiles()
 {
+    if (okToContinue())
+    {
+        auto action = qobject_cast<QAction*>(sender());
+        if (action)
+        {
+            const auto FILE_NAME = action->data().toString();
+            if (loadFile(FILE_NAME))
+            {
+                setCurrentFile(FILE_NAME);
+            }
 
+        }
+    }
 }
 
 void MainWindow::on_actionAbout_Qt_triggered()
@@ -113,7 +126,7 @@ bool MainWindow::okToContinue()
         int res = QMessageBox::warning(this, tr("Spreadsheet"), tr("The document has been modified. \n Do you want to save your changes?"),
                                        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
         if (res == QMessageBox::Yes)
-            return true;
+            return save();
         else if (res == QMessageBox::Cancel)
             return false;
 
@@ -151,10 +164,7 @@ bool MainWindow::writeFile(const QString& fileName)
     for (int row = 0; row < ROW_AMOUNT; ++row) {
         for (int col = 0; col < COLUMN_AMOUNT; ++col) {
             QTableWidgetItem* item = ui->tableWidget->item(row, col);
-            if (item) {
-                QString value = item->text();
-                stream << value << "\t";  // Разделитель значений
-            }
+            stream << (item ? item->text() : "") << "\t";
         }
         stream << "\n";  // Переход на новую строку
     }
@@ -201,7 +211,29 @@ QString MainWindow::strippedName(const QString& filePath)
 
 void MainWindow::updateRecentFilesActions()
 {
+    QMutableStringListIterator it(recentFiles);
+    while (it.hasNext())
+    {
+        if (!QFile::exists(it.next()))
+        {
+            it.remove();
+        }
+    }
 
+    for (int i = 0; i < MAX_RECENT_FILES_AMOUNT; ++i)
+    {
+        if (i < recentFiles.count())
+        {
+            const QString TEXT = tr("&%1 %2").arg(i + 1).arg(strippedName(recentFiles[i]));
+            recentFilesActions[i]->setText(TEXT);
+            recentFilesActions[i]->setData(recentFiles[i]);
+            recentFilesActions[i]->setVisible(true);
+        }
+        else
+        {
+            recentFilesActions[i]->setVisible(false);
+        }
+    }
 }
 
 void MainWindow::clearTableWidget()
@@ -225,7 +257,12 @@ void MainWindow::on_actionOpen_triggered()
     {
         QString fileName = QFileDialog::getOpenFileName(this, tr("Open Spreadsheet"), ".", tr("Spreadsheet files (*.sp)"));
         if (!fileName.isEmpty())
-            loadFile(fileName);
+        {
+            if (loadFile(fileName))
+            {
+                setCurrentFile(fileName);
+            }
+        }
     }
 }
 
@@ -263,3 +300,32 @@ void MainWindow::on_actionSave_triggered()
     save();
 }
 
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    saveAs();
+}
+
+
+void MainWindow::on_tableWidget_itemChanged(QTableWidgetItem *item)
+{
+    setWindowModified(true);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    if (okToContinue())
+    {
+        writeSettings();
+        event->accept();
+    }
+    else
+    {
+        event->ignore();
+    }
+}
+
+void MainWindow::writeSettings()
+{
+
+}

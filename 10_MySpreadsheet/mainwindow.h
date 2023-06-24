@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 
-//class QAction;
+class QTableWidgetItem;
 class QLabel;
 
 QT_BEGIN_NAMESPACE
@@ -36,6 +36,12 @@ private slots:
 
     void on_actionSave_triggered();
 
+    void on_actionSave_As_triggered();
+
+    void on_tableWidget_itemChanged(QTableWidgetItem *item);
+
+    void closeEvent(QCloseEvent* event);
+
 private:
     bool okToContinue();
 
@@ -57,10 +63,12 @@ private:
 
     void updateRecentFilesActions();
 
+    void writeSettings();
+
     Ui::MainWindow *ui;
 
-    static constexpr int RECENT_FILES_AMOUNT = 5;
-    QAction* recentFilesActions[RECENT_FILES_AMOUNT];
+    static constexpr int MAX_RECENT_FILES_AMOUNT = 5;
+    QAction* recentFilesActions[MAX_RECENT_FILES_AMOUNT];
     QStringList recentFiles;
 
     QLabel* locationLabel;
