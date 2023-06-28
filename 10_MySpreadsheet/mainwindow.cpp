@@ -6,6 +6,11 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QCloseEvent>
+#include <QSettings>
+#include "FindDialog.h"
+#include "GoToCellDialog.h"
+#include "SortDialog.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -53,8 +58,61 @@ MainWindow::MainWindow(QWidget *parent)
     statusBar()->addWidget(locationLabel, 0);
     statusBar()->addWidget(formulaLabel, 1);
 
+    findDlg = new FindDialog(this);
+    connect(findDlg, &FindDialog::findNext, this, &MainWindow::onFindNext);
+    connect(findDlg, &FindDialog::findPrev, this, &MainWindow::onFindPrev);
+
     setCurrentFile("");
     setWindowIcon(QIcon(":/Icons/Spreadsheet.jpg"));
+
+    readSettings();
+    updateContextMenu();
+}
+
+void MainWindow::onFindNext(const QString& str, const Qt::CaseSensitivity cs)
+{
+    int CURRENT_ROW = ui->tableWidget->currentRow();
+    int CURRENT_COLUMN = ui->tableWidget->currentColumn() + 1;
+
+    for (int i = CURRENT_ROW; i < ui->tableWidget->rowCount(); ++i)
+    {
+        for (int j = CURRENT_COLUMN; j < ui->tableWidget->columnCount(); ++j)
+        {
+            auto item = ui->tableWidget->item(i, j);
+            if (item && item->text().contains(str, cs))
+            {
+                ui->tableWidget->clearSelection();
+                ui->tableWidget->setCurrentCell(i, j);
+                activateWindow();
+                return;
+            }
+        }
+    }
+
+    QApplication::beep();
+}
+
+void MainWindow::onFindPrev(const QString& str, const Qt::CaseSensitivity cs)
+{
+    const int CURRENT_ROW = ui->tableWidget->currentRow();
+    const int CURRENT_COLUMN = ui->tableWidget->currentColumn() - 1;
+
+    for (int i = CURRENT_ROW; i >= 0; --i)
+    {
+        for (int j = CURRENT_COLUMN; j >= 0; --j)
+        {
+            auto item = ui->tableWidget->item(i, j);
+            if (item && item->text().contains(str, cs))
+            {
+                ui->tableWidget->clearSelection();
+                ui->tableWidget->setCurrentCell(i, j);
+                activateWindow();
+                return;
+            }
+        }
+    }
+
+    QApplication::beep();
 }
 
 MainWindow::~MainWindow()
@@ -74,7 +132,6 @@ void MainWindow::onOpenRecentFiles()
             {
                 setCurrentFile(FILE_NAME);
             }
-
         }
     }
 }
@@ -97,6 +154,7 @@ void MainWindow::on_actionShow_grid_toggled(bool arg1)
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
     updateStatusBar(currentRow, currentColumn);
+    updateContextMenu();
 }
 
 void MainWindow::updateStatusBar(const int row, const int column)
@@ -166,10 +224,9 @@ bool MainWindow::writeFile(const QString& fileName)
             QTableWidgetItem* item = ui->tableWidget->item(row, col);
             stream << (item ? item->text() : "") << "\t";
         }
-        stream << "\n";  // Переход на новую строку
+        stream << "\n";
     }
 
-    // Закрытие файла
     file.close();
     return true;
 }
@@ -322,10 +379,124 @@ void MainWindow::closeEvent(QCloseEvent* event)
     else
     {
         event->ignore();
+        writeSettings();
     }
 }
 
 void MainWindow::writeSettings()
 {
+    QSettings settings("SOFTEBY", "Spreadsheet");
 
+    settings.setValue("geometry", geometry());
+    settings.setValue("recentFiles", recentFiles);
+    settings.setValue("showGrid", ui->actionShow_grid->isChecked());
+    settings.setValue("autoRecalc", ui->actionAutoRecalculate->isChecked());
+}
+
+void MainWindow::readSettings()
+{
+    QSettings settings("SOFTEBY", "Spreadsheet");
+
+    const QRect geom = settings.value("geometry", QRect(100, 100, 800, 600)).toRect();
+    setGeometry(geom);
+    recentFiles = settings.value("recentFiles").toStringList();
+    ui->actionShow_grid->setChecked(settings.value("showGrid", true).toBool());
+    ui->actionAutoRecalculate->setChecked(settings.value("autoRecalc", false).toBool());
+}
+
+void MainWindow::on_actionFind_triggered()
+{
+    findDlg->show();
+    findDlg->raise();
+    findDlg->activateWindow();
+}
+
+
+void MainWindow::on_actionGo_To_Cell_triggered()
+{
+    GoToCellDialog goToCellDlg(this);
+    int res = goToCellDlg.exec();
+    if (res == SortDialog::Accepted)
+    {
+        const auto cellText = goToCellDlg.getInputCellLocation().toUpper();
+        ui->tableWidget->setCurrentCell(cellText.midRef(1).toInt() - 1, cellText[0].unicode() - 'A');
+    }
+}
+
+
+// TODO: finish sort
+void MainWindow::on_actionSort_triggered()
+{
+//    SortDialog sortDlg(this);
+
+//    QTableWidgetSelectionRange range = ui->tableWidget->selectedRanges().at(0);
+//    int res = sortDlg.exec();
+//    if (res == SortDialog::Accepted)
+//    {
+//    }
+}
+
+
+void MainWindow::on_actionDelete_triggered()
+{
+    auto item = ui->tableWidget->currentItem();
+    if (item)
+    {
+        item->setText("");
+    }
+}
+
+
+void MainWindow::on_actioncut_triggered()
+{
+    auto item = ui->tableWidget->currentItem();
+    if (item)
+    {
+        pasteBuf.setBuffer(item->text(), PasteQString::Operation::CUT);
+        item->setText("");
+
+        updateContextMenu();
+    }
+}
+
+
+void MainWindow::on_actionPaste_triggered()
+{
+    auto item = ui->tableWidget->currentItem();
+    const QString buffer = pasteBuf.getBuffer();
+    if (!buffer.isEmpty())
+    {
+        if (item)
+        {
+            item->setText(buffer);
+        }
+        else
+        {
+            item = new QTableWidgetItem(pasteBuf.getBuffer());
+            ui->tableWidget->setItem(ui->tableWidget->currentRow(), ui->tableWidget->currentColumn(), item);
+        }
+
+        updateContextMenu();
+    }
+}
+
+
+void MainWindow::on_actionCopy_triggered()
+{
+    auto item = ui->tableWidget->currentItem();
+    pasteBuf.setBuffer(item ? item->text() : "", PasteQString::Operation::COPY);
+    updateContextMenu();
+}
+
+
+void MainWindow::updateContextMenu()
+{
+    auto item = ui->tableWidget->currentItem();
+    const bool isCurItemTextisEmpty = (item ? item->text().isEmpty() : true);
+
+    ui->actionCopy->setDisabled(isCurItemTextisEmpty);
+    ui->actioncut->setDisabled(isCurItemTextisEmpty);
+
+    const bool isPasteBufEmpty = pasteBuf.lookAtBuffer().isEmpty();
+    ui->actionPaste->setDisabled(isPasteBufEmpty);
 }

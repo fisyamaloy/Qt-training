@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-
+#include "PasteQString.h"
 
 class QTableWidgetItem;
 class QLabel;
+class FindDialog;
+class SortDialog;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -42,6 +44,23 @@ private slots:
 
     void closeEvent(QCloseEvent* event);
 
+    void onFindNext(const QString& str, const Qt::CaseSensitivity cs);
+    void onFindPrev(const QString& str, const Qt::CaseSensitivity cs);
+
+    void on_actionFind_triggered();
+
+    void on_actionGo_To_Cell_triggered();
+
+    void on_actionSort_triggered();
+
+    void on_actionDelete_triggered();
+
+    void on_actioncut_triggered();
+
+    void on_actionPaste_triggered();
+
+    void on_actionCopy_triggered();
+
 private:
     bool okToContinue();
 
@@ -64,8 +83,13 @@ private:
     void updateRecentFilesActions();
 
     void writeSettings();
+    void readSettings();
 
+    void updateContextMenu();
+
+private:
     Ui::MainWindow *ui;
+    FindDialog* findDlg;
 
     static constexpr int MAX_RECENT_FILES_AMOUNT = 5;
     QAction* recentFilesActions[MAX_RECENT_FILES_AMOUNT];
@@ -75,5 +99,7 @@ private:
     QLabel* formulaLabel;
 
     QString currentFile;
+    PasteQString pasteBuf;
+
 };
 #endif // MAINWINDOW_H

@@ -17,6 +17,13 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        FindDialog.h
+        FindDialog.cpp
+        GoToCellDialog.h
+        GoToCellDialog.cpp
+        SortDialog.h
+        SortDialog.cpp
+        PasteQString.h
         Images.qrc
 )
 

@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>Icons/Spreadsheet.jpg</file>
+        <file>Icons/Splash.jpg</file>
     </qresource>
 </RCC>
